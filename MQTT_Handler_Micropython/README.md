@@ -126,4 +126,4 @@ The following diagram shows how the WiFi and MQTT handlers work together:
 - This example uses a **simple MQTT connection** (non-TLS, port **1883**).  
   It works well with public brokers like `mqtt-dashboard.com` or `test.mosquitto.org`, but it does **not use encryption**.  
   For cloud brokers (like HiveMQ Cloud or AWS IoT), you must use **TLS/SSL (port 8883)**  — which requires extra setup.
-- For better reliability (automatic reconnection if the broker disconnects), you should use **`umqtt.robust`** instead of plain **`umqtt.simple`**.
+- For better reliability (automatic reconnection if the broker disconnects) and also to use HIVEMQ Cloud service, you should use **`umqtt.robust`** instead of plain **`umqtt.simple`**.

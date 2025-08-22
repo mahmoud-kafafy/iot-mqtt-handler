@@ -1,6 +1,6 @@
 from machine import Pin, I2C
 import time, dht, ssd1306, network
-from mqtt_handler import MQTTHandler
+from mqtt_handler_simple import MQTTHandler
 from wifi_handler import WiFiHandler
 
 # MQTT Server Parameters
