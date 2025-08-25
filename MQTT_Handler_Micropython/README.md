@@ -1,10 +1,14 @@
+Perfect 👍
+Your README looks **clean and clear** — just missing a **dedicated section for HiveMQ Cloud (TLS, port 8883)** since you already built the `HiveMQHandler` class. I’ll suggest a **modified version** of your README that includes both **simple MQTT (1883)** and **HiveMQ Cloud (8883 + TLS)**, so users can choose based on their broker.
+
+Here’s the updated version:
+
+---
 
 # 📡 MQTTHandler & WiFiHandler for ESP32 (MicroPython)
 
 Simple classes to connect your ESP32 to **WiFi** and an **MQTT broker**, publish sensor data, and receive messages.
-
-
-
+Supports both **public non-secure brokers** and **HiveMQ Cloud (TLS 8883)**.
 
 ---
 
@@ -12,12 +16,12 @@ Simple classes to connect your ESP32 to **WiFi** and an **MQTT broker**, publish
 
 ### 1️⃣ Import the handler files
 
-Download `wifi_handler.py` and `mqtt_handler.py` from the repo and put them in the **same directory as your main**.
-This allows you to use the WiFi and MQTT helper classes in your project.
+Download `wifi_handler.py` and `mqtt_handler.py` (for plain MQTT) or `hivemq_handler.py` (for TLS/HiveMQ) and put them in the **same directory as your `main.py`**.
 
 ```python
 from wifi_handler import WiFiHandler
-from mqtt_handler import MQTTHandler
+from mqtt_handler import MQTTHandler        # For plain MQTT (1883)
+from hivemq_handler import HiveMQHandler    # For HiveMQ Cloud (8883 + TLS)
 ```
 
 ---
@@ -31,7 +35,7 @@ wifi = WiFiHandler("YourWiFiSSID", "YourWiFiPassword")
 wifi.connect()
 ```
 
-Output will show your ESP32 IP address:
+Output:
 
 ```
 ✅ WiFi Connected: ('192.168.1.50', '255.255.255.0', '192.168.1.1', '8.8.8.8')
@@ -41,33 +45,48 @@ Output will show your ESP32 IP address:
 
 ### 3️⃣ Define your MQTT parameters
 
-Here you set the **client ID**, **broker address**, **username/password** (if required), and the topics you want to publish or subscribe to.
+#### 🔹 For public brokers (non-TLS, port **1883**):
 
 ```python
-MQTT_CLIENT_ID = "micropython-weather-demo"
+MQTT_CLIENT_ID = "esp32-demo"
 MQTT_BROKER    = "mqtt-dashboard.com"
-MQTT_USER      = ""       # set if required
-MQTT_PASSWORD  = ""       # set if required
-MQTT_TOPIC     = b"wokwi-weatherr"      # where you will publish
-MQTT_TOPIC_SUB = b"wokwi-weatherr"      # where you will listen
+MQTT_USER      = ""        # not required
+MQTT_PASSWORD  = ""        # not required
+MQTT_TOPIC     = b"esp32/test"
+```
+
+#### 🔹 For HiveMQ Cloud (TLS, port **8883**):
+
+```python
+MQTT_CLIENT_ID = "esp32-demo" 
+MQTT_BROKER    = "f446739580a645d9b26dc12166f78ed8.s1.eu.hivemq.cloud"     #your server URL
+MQTT_USER      = "your-hivemq-username"
+MQTT_PASSWORD  = "your-hivemq-password"
+MQTT_TOPIC     = b"esp32/test"
+PORT = 8883 #oe your server port number
 ```
 
 ---
 
 ### 4️⃣ Create and connect the MQTT client
 
-This step initializes your MQTT client and connects it to the broker.
+#### Public broker (1883):
 
 ```python
 mqtt_client = MQTTHandler(MQTT_CLIENT_ID, MQTT_BROKER, MQTT_USER, MQTT_PASSWORD)
 mqtt_client.connect()
 ```
 
+#### HiveMQ Cloud (8883 + TLS):
+
+```python
+mqtt_client = HiveMQHandler(MQTT_CLIENT_ID, MQTT_BROKER, MQTT_USER, MQTT_PASSWORD, PORT)
+mqtt_client.connect()
+```
+
 ---
 
 ### 5️⃣ Publish a message
-
-Sends data to your chosen topic. You can publish **sensor readings** or any data you want and i change it to bytes in the class.
 
 ```python
 mqtt_client.publish(MQTT_TOPIC, "Hello from ESP32")
@@ -77,26 +96,23 @@ mqtt_client.publish(MQTT_TOPIC, "Hello from ESP32")
 
 ### 6️⃣ Subscribe to a topic
 
-This lets your ESP32 **listen** for incoming messages on a topic.
-When a new message arrives, the callback function is triggered.
-
 ```python
 def message_callback(topic, msg):
     print(f"📩 Received on {topic.decode()}: {msg.decode()}")
 
-mqtt_client.subscribe(MQTT_TOPIC_SUB, message_callback)
+mqtt_client.subscribe(MQTT_TOPIC, message_callback)
 ```
 
 ---
 
-### 7️⃣ Check for incoming messages (inside your loop)
-
-Keeps checking for new messages from the broker.
-You should place this in your main loop so messages are not missed.
+### 7️⃣ Check messages in the main loop
 
 ```python
 while True:
+  try:
     mqtt_client.check_messages()
+  except OSError as e:
+    print(f "Error {e}")
 ```
 
 ---
@@ -105,25 +121,27 @@ while True:
 
 * Easy WiFi connection
 * MQTT connect, publish, and subscribe
-* Custom callback for received messages
+* Callback for received messages
 * Non-blocking message checking
-
----
-
-👉 See `main.py` for a **full working example** with WiFi + MQTT.
+* `umqtt.robust` → auto-reconnect if disconnected
+* TLS/SSL support for HiveMQ Cloud
 
 ---
 
 ## 📊 Workflow Diagram
-
-The following diagram shows how the WiFi and MQTT handlers work together:
 
 ![Workflow Diagram](Diagram/Diagram.png)
 
 ---
 
 ⚠️ **Important Notes:**
-- This example uses a **simple MQTT connection** (non-TLS, port **1883**).  
-  It works well with public brokers like `mqtt-dashboard.com` or `test.mosquitto.org`, but it does **not use encryption**.  
-  For cloud brokers (like HiveMQ Cloud or AWS IoT), you must use **TLS/SSL (port 8883)**  — which requires extra setup.
-- For better reliability (automatic reconnection if the broker disconnects) and also to use HIVEMQ Cloud service, you should use **`umqtt.robust`** instead of plain **`umqtt.simple`**.
+
+* Use **port 1883** for public brokers (`mqtt-dashboard.com`, `test.mosquitto.org`).
+* Use **port 8883 (TLS)** with username/password for **HiveMQ Cloud**.
+* For production, prefer **`umqtt.robust`** since it automatically reconnects if WiFi or MQTT connection drops.
+
+---
+
+👉 See `main.py` for complete examples with both **simple MQTT** in **main_simple.py**and **HiveMQ Cloud (TLS)** in **main.robust**.
+
+---
