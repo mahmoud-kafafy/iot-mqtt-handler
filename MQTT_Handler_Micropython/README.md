@@ -1,7 +1,3 @@
-Perfect 👍
-Your README looks **clean and clear** — just missing a **dedicated section for HiveMQ Cloud (TLS, port 8883)** since you already built the `HiveMQHandler` class. I’ll suggest a **modified version** of your README that includes both **simple MQTT (1883)** and **HiveMQ Cloud (8883 + TLS)**, so users can choose based on their broker.
-
-Here’s the updated version:
 
 ---
 
